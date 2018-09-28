@@ -1,17 +1,13 @@
 module Main exposing (..)
 
-import String
 import Html exposing (Html, div, text)
 import Html.Attributes as HA
 import Html.Events as HE
 import Http
-import Maybe
-import Svg exposing (Svg, svg, rect, polygon, polyline, image)
+import Svg 
 import Svg.Attributes as SA
-import Svg.Events as SE
-import List exposing (head, drop, take)
-import Json.Decode as DC exposing (Decoder)
-import Task exposing (andThen)
+import Json.Decode as DC 
+import Task 
 import Browser
 
 
@@ -53,8 +49,7 @@ type alias Photo =
 
 initPhoto : String -> String -> String -> Int -> Photo
 initPhoto id sec ser farm =
-    -- Photo id sec ser farm Nothing
-    Photo id sec ser farm (Just "HELLO")
+    Photo id sec ser farm Nothing
 
 
 decodePhotoList : DC.Decoder (List Photo)
@@ -70,7 +65,6 @@ decodePhotoList =
 
 
 -- Decode photos from "flickr.people.getPublicPhotos" request.
-
 
 decodePhotos : DC.Decoder (List Photo)
 decodePhotos =
@@ -168,7 +162,7 @@ getPhotosCmd name =
             Http.toTask (Http.get (publicPhotosUrl uid) decodePhotos)
 
         userPhotosTask =
-            userTask |> (andThen publicPhotosTask)
+            userTask |> (Task.andThen publicPhotosTask)
     in
         Task.attempt SetPhotos userPhotosTask
 
@@ -182,8 +176,11 @@ init _ = ( Ok [],getPhotosCmd "dave20477" )
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        SetPhotos phs ->
-            ( phs, Cmd.none )
+        SetPhotos (Ok phs) ->
+            ( Ok phs, Cmd.batch <| List.map setDescriptionCmd phs )
+
+        SetPhotos (Err e) ->
+            ( Err e, Cmd.none )
 
         -- Update description of the currently viewed photo.
         SetDescription (Ok ( photoid, desc )) ->
@@ -237,14 +234,14 @@ viewPhoto ps =
                 , HA.style   "width"  "100%" 
                 , HA.style   "margin"  "0" 
                 ]
-            [ svg
+            [ Svg.svg
                   [ SA.version "1.1"
                   , SA.width "100%"
                   , SA.height "100%"
                   , SA.viewBox "-1 -0.6 2 1.2"
                   , SA.preserveAspectRatio "none"
                   ]
-                  ([ image
+                  ([ Svg.image
                       [ SA.xlinkHref (photoUrl ps)
                       , SA.x "-1"
                       , SA.y "-0.6"
@@ -267,7 +264,6 @@ viewPhoto ps =
         ]
 
 -- Draw an image or display the reason the image is not available.
-
 
 view : Model -> Html Msg
 view model =
