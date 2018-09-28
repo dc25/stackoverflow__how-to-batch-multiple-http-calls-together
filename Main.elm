@@ -26,7 +26,7 @@ main =
     , subscriptions = \m -> Sub.none
     }
 
-type alias Model = Result Http.Error (List Photo) 
+type alias Model = Result Http.Error {uncaptioned: List Photo, captioned: List Photo} 
 
 decodeUser : DC.Decoder String
 decodeUser =
@@ -169,15 +169,15 @@ getPhotosCmd name =
 
 
 init : () -> ( Model, Cmd Msg )
-init _ = ( Ok [],getPhotosCmd "dave20477" )
+init _ = ( Ok {uncaptioned=[], captioned=[]},getPhotosCmd "elmDemo" )
 
 -- UPDATE
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        SetPhotos (Ok phs) ->
-            ( Ok phs, Cmd.batch <| List.map setDescriptionCmd phs )
+        SetPhotos (Ok photos) ->
+            ( Ok {uncaptioned=photos, captioned=[]}, Cmd.batch <| List.map setDescriptionCmd photos )
 
         SetPhotos (Err e) ->
             ( Err e, Cmd.none )
@@ -188,8 +188,8 @@ update msg model =
                 Err e ->
                     ( Err e, Cmd.none )
 
-                Ok phs ->
-                    ( Ok phs, Cmd.none )
+                Ok photos ->
+                    ( Ok photos, Cmd.none )
 
         SetDescription (Err e) ->
             ( Err e, Cmd.none )
@@ -265,5 +265,5 @@ view model =
         case model of
             Err s ->
                 text ("Error: " )
-            Ok (phs ) ->
-                div [] (List.map viewPhoto phs)
+            Ok (photos ) ->
+                div [] (List.map viewPhoto (photos.uncaptioned))
