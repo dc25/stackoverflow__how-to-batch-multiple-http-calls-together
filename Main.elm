@@ -196,12 +196,8 @@ update msg model =
 
 
 
--- VIEW
-
-
 -- Compute a photo URL from a Photo record.
 -- per: https://www.flickr.com/services/api/misc.urls.html
-
 
 photoUrl : Photo -> String
 photoUrl ps =
@@ -218,7 +214,6 @@ photoUrl ps =
 
 
 -- show an image and description if available.
-
 
 viewPhoto : Photo -> Html Msg
 viewPhoto ps =
