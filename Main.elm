@@ -45,7 +45,6 @@ main =
 
 type alias Model =
     { photos : Result Http.Error { left : List Photo, shown : Maybe Photo, right : List Photo }
-    , clicks : Int
     }
 
 
@@ -301,20 +300,8 @@ init _ =
     let
         cmd = getPhotosCmd "dave20477"
     in
-        ( { photos = Ok { left = [], shown = Nothing, right = [] }, clicks = 0 }, cmd )
+        ( { photos = Ok { left = [], shown = Nothing, right = [] }}, cmd )
 
-
-
--- URL PARSING
-
-
-type Route
-    = NameOnly String String
-    | NameAndAlbum String String String
-
-
-
--- Parse URL 'arguments' either to just a user or a user and album.
 
 
 -- UPDATE
@@ -384,13 +371,13 @@ update msg model =
                                                     , left = List.drop 1 left
                                                     }
                             in
-                                ( { photos = Ok ns, clicks = model.clicks + 1 }, setDescriptionCmd ns.shown )
+                                ( { photos = Ok ns }, setDescriptionCmd ns.shown )
 
         -- Update description of the currently viewed photo.
         SetDescription (Ok ( photoid, desc )) ->
             case model.photos of
                 Err e ->
-                    ( { photos = Err e, clicks = 0 }, Cmd.none )
+                    ( { photos = Err e}, Cmd.none )
 
                 Ok { left, shown, right } ->
                     case (shown) of
@@ -411,51 +398,18 @@ update msg model =
                                     ( model, Cmd.none )
 
         SetDescription (Err e) ->
-            ( { photos = Err e, clicks = 0 }, Cmd.none )
+            ( { photos = Err e}, Cmd.none )
 
 
 
 -- VIEW
--- Draw a svg "arrow" (a triangle) pointing left or right.
 
 
-arrow : String -> Direction -> List (Svg Msg)
-arrow fade dir =
-    [ polygon
-        [ SA.style "stroke:#808080; stroke-width:6; stroke-linecap:round; stroke-linejoin:round"
-        , SA.strokeOpacity fade
-        , SA.fillOpacity "0.0"
-        , SA.points
-            (if (dir == Left) then
-                "-80,-15 -95,0 -80,15"
-             else
-                "80,-15 95,0 80,15"
-            )
-        ]
-        []
-    , rect
-        [ SA.x
-            (if dir == Left then
-                "-100"
-             else
-                "50"
-            )
-        , SA.y "-60"
-        , SA.width "50"
-        , SA.height "120"
-        , SA.fillOpacity "0.0"
-        , SE.onClick (ScrollPick dir)
-        ]
-        []
-    ]
+-- Draw an image 
 
 
-
--- Draw an image with arrows for scrolling left or righ
-
-
-imageWithArrows : String -> String -> Html Msg
-imageWithArrows fade im =
+imageWithArrows : String -> Html Msg
+imageWithArrows im =
     svg
         [ SA.version "1.1"
         , SA.width "100%"
@@ -472,8 +426,6 @@ imageWithArrows fade im =
             ]
             []
          ]
-            ++ arrow fade Left
-            ++ arrow fade Right
         )
 
 
@@ -499,8 +451,8 @@ photoUrl ps =
 -- show an image and description if available.
 
 
-photoInDiv : String -> Photo -> Html Msg
-photoInDiv fade ps =
+photoInDiv : Photo -> Html Msg
+photoInDiv ps =
     div
         [ 
               HA.style "height" "100%" 
@@ -513,7 +465,7 @@ photoInDiv fade ps =
                 , HA.style   "width"  "100%" 
                 , HA.style   "margin"  "0" 
                 ]
-            [ imageWithArrows fade (photoUrl ps) ]
+            [ imageWithArrows (photoUrl ps) ]
         , div
                 [ HA.style   "height"  "10%"
                 , HA.style   "width"  "100%"
@@ -537,19 +489,6 @@ view model =
                 text ("Error: " )
 
             Ok scroll ->
-                let
-                    clicks =
-                        model.clicks
-
-                    fadeCount =
-                        if (clicks > 5) then
-                            0
-                        else
-                            5 - clicks
-
-                    fade =
-                        String.fromFloat <| toFloat fadeCount / 5.0
-                in
                     div
                         [ 
                                     HA.style "height" "100%" , 
@@ -561,6 +500,6 @@ view model =
                                 []
 
                             Just ph ->
-                                [ photoInDiv fade ph ]
+                                [ photoInDiv ph ]
                         )
         ]
