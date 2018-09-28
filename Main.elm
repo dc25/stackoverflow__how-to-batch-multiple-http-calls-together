@@ -13,13 +13,6 @@ import List exposing (head, drop, take)
 import Json.Decode as DC exposing (Decoder)
 import Task exposing (andThen)
 import Browser
-import Browser.Navigation as Navigation
-import Url as Url 
-
-
-type Direction
-    = Left
-    | Right
 
 
 type Msg
@@ -37,13 +30,7 @@ main =
     , subscriptions = \m -> Sub.none
     }
 
-
-
--- MODEL
-
-
 type alias Model = Result Http.Error (List Photo) 
-
 
 decodeUser : DC.Decoder String
 decodeUser =
@@ -90,41 +77,15 @@ decodePhotos =
 
 
 
--- Decode photos from "flickr.photosets.getPhotos" request.
-
-
-decodeAlbumPhotos : DC.Decoder (List Photo)
-decodeAlbumPhotos =
-    DC.at [ "photoset", "photo" ] decodePhotoList
-
-
-
--- Decode names of photosets from "flickr.photosets.getList" request.
-
-
-decodePhotoSets : DC.Decoder (List ( String, String ))
-decodePhotoSets =
-    DC.at [ "photosets", "photoset" ]
-        (DC.list <|
-            DC.map2 (\l r -> (l,r))
-                ((DC.at [ "id" ]) DC.string)
-                ((DC.at [ "title", "_content" ]) DC.string)
-        )
-
-
-
 -- Decode descripion of photo from "flickr.photos.getInfo" request.
-
 
 decodePhotoDescription : DC.Decoder String
 decodePhotoDescription =
     DC.at [ "photo", "description", "_content" ] DC.string
 
 
-
 -- api key from flickr.  Anyone who clones this project should
 -- get their own api key.
-
 
 apiKey : String
 apiKey =
@@ -163,41 +124,6 @@ publicPhotosUrl uid =
         ++ noJsonCallback
 
 
-photoSetsUrl : String -> String
-photoSetsUrl uid =
-    flickrRestServices
-        ++ "&method=flickr.photosets.getList"
-        ++ "&api_key="
-        ++ apiKey
-        ++ "&user_id="
-        ++ uid
-        ++ noJsonCallback
-
-
-albumPhotosUrl : String -> ( String, List ( String, String ) ) -> Maybe String
-albumPhotosUrl album ( uid, setList ) =
-    let
-        setForAlbum =
-            List.head <| List.filter (\( id, name ) -> name == album) setList
-    in
-        case setForAlbum of
-            Nothing ->
-                Nothing
-
-            Just ( id, name ) ->
-                Just
-                    (flickrRestServices
-                        ++ "&method=flickr.photosets.getPhotos"
-                        ++ "&api_key="
-                        ++ apiKey
-                        ++ "&user_id="
-                        ++ uid
-                        ++ "&photoset_id="
-                        ++ id
-                        ++ noJsonCallback
-                    )
-
-
 photoInfoUrl : String -> String
 photoInfoUrl photo =
     flickrRestServices
@@ -215,13 +141,8 @@ photoInfoUrl photo =
 -- Save the photo id with Task.map to verify the same photo is being displayed when the response comes back.
 
 
-setDescriptionCmd : Maybe Photo -> Cmd Msg
-setDescriptionCmd mdp =
-    case mdp of
-        Nothing ->
-            Cmd.none
-
-        Just dp ->
+setDescriptionCmd : Photo -> Cmd Msg
+setDescriptionCmd dp =
             case (dp.description) of
                 Nothing ->
                     Task.attempt SetDescription (Task.map (\s -> ( dp.id, s )) <| Http.toTask <| Http.get (photoInfoUrl (dp.id)) decodePhotoDescription)
@@ -233,7 +154,6 @@ setDescriptionCmd mdp =
 
 -- Cmd to get users public photos from flickr.
 -- Package results as SetPhotos message.
-
 
 getPhotosCmd : String -> Cmd Msg
 getPhotosCmd name =
@@ -254,13 +174,6 @@ getPhotosCmd name =
 
 
 
--- Cmd to get public photos in named user's album from flickr.
--- Package results as SetPhotos message.
-
-
--- Initialize model based on URL 'routing' arguments.
-
-
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
@@ -268,10 +181,7 @@ init _ =
     in
         ( Ok [],cmd )
 
-
-
 -- UPDATE
-
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -294,31 +204,6 @@ update msg model =
 
 
 -- VIEW
-
-
--- Draw an image 
-
-
-imageWithArrows : String -> Html Msg
-imageWithArrows im =
-    svg
-        [ SA.version "1.1"
-        , SA.width "100%"
-        , SA.height "100%"
-        , SA.viewBox "-100 -60 200 120"
-        , SA.preserveAspectRatio "none"
-        ]
-        ([ image
-            [ SA.xlinkHref im
-            , SA.x "-100"
-            , SA.y "-60"
-            , SA.width "200"
-            , SA.height "120"
-            ]
-            []
-         ]
-        )
-
 
 
 -- Compute a photo URL from a Photo record.
@@ -356,7 +241,25 @@ photoInDiv ps =
                 , HA.style   "width"  "100%" 
                 , HA.style   "margin"  "0" 
                 ]
-            [ imageWithArrows (photoUrl ps) ]
+            [ svg
+                  [ SA.version "1.1"
+                  , SA.width "100%"
+                  , SA.height "100%"
+                  , SA.viewBox "-100 -60 200 120"
+                  , SA.preserveAspectRatio "none"
+                  ]
+                  ([ image
+                      [ SA.xlinkHref (photoUrl ps)
+                      , SA.x "-100"
+                      , SA.y "-60"
+                      , SA.width "200"
+                      , SA.height "120"
+                      ]
+                      []
+                   ]
+                  )
+            ]
+
         , div
                 [ HA.style   "height"  "10%"
                 , HA.style   "width"  "100%"
@@ -366,8 +269,6 @@ photoInDiv ps =
                 [ text <| Maybe.withDefault "" ps.description ]
             ]
         ]
-
-
 
 -- Draw an image or display the reason the image is not available.
 
