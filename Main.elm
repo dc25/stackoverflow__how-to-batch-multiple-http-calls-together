@@ -28,8 +28,8 @@ main =
 
 type alias Model =
     Result Http.Error
-        { uncaptioned : List Photo
-        , captioned : List Photo
+        { untitled : List Photo
+        , titled : List Photo
         }
 
 
@@ -180,8 +180,8 @@ getPhotosCmd name =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Ok
-        { uncaptioned = []
-        , captioned = []
+        { untitled = []
+        , titled = []
         }
     , getPhotosCmd "elmDemo"
     )
@@ -196,8 +196,8 @@ update msg model =
     case msg of
         SetPhotos (Ok photos) ->
             ( Ok
-                { uncaptioned = photos
-                , captioned = []
+                { untitled = photos
+                , titled = []
                 }
             , Cmd.batch <| List.map setDescriptionCmd photos
             )
@@ -217,20 +217,22 @@ update msg model =
 
                 Ok photos ->
                     let
-                        nowCaptioned =
-                            photos.uncaptioned
+                        nowTitled =
+                            photos.untitled
                                 |> List.filter (\ph -> ph.id == photoId)
                                 |> List.map (\ph -> { ph | description = Just desc })
 
-                        stillUncaptioned =
-                            photos.uncaptioned
+                        stillUntitled =
+                            photos.untitled
                                 |> List.filter (\ph -> ph.id /= photoId)
                     in
                     ( Ok
-                        { uncaptioned = stillUncaptioned
-                        , captioned = photos.captioned ++ nowCaptioned
+                        { untitled = stillUntitled
+                        , titled = photos.titled ++ nowTitled
                         }
-                    , Cmd.none
+                    , if (List.isEmpty stillUntitled) 
+                      then Cmd.none -- Could do something else here.
+                      else Cmd.none 
                     )
 
         SetDescription (Err e) ->
@@ -295,7 +297,8 @@ viewPhoto ps =
             , HA.style "width" "100%"
             , HA.style "margin" "0"
             ]
-            [ div [ HA.style "text-align" "center" ]
+            [ div 
+                [ HA.style "text-align" "center" ]
                 [ text <| Maybe.withDefault "" ps.description ]
             ]
         ]
@@ -313,8 +316,8 @@ view model =
 
         Ok photos ->
             div []
-                [ div [] [ text "Uncaptioned" ]
-                , div [] (List.map viewPhoto photos.uncaptioned)
-                , div [] [ text "Captioned" ]
-                , div [] (List.map viewPhoto photos.captioned)
+                [ div [] [ text "Untitled" ]
+                , div [] (List.map viewPhoto photos.untitled)
+                , div [] [ text "Titled" ]
+                , div [] (List.map viewPhoto photos.titled)
                 ]
