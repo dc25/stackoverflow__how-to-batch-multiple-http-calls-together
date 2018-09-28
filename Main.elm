@@ -25,7 +25,6 @@ type Direction
 type Msg
     = 
       SetPhotos (Result Http.Error (List Photo))
-    | ScrollPick Direction
     | SetDescription (Result Http.Error ( String, String ))
 
 
@@ -43,9 +42,7 @@ main =
 -- MODEL
 
 
-type alias Model =
-    { photos : Result Http.Error { left : List Photo, shown : Maybe Photo, right : List Photo }
-    }
+type alias Model = Result Http.Error (List Photo) 
 
 
 decodeUser : DC.Decoder String
@@ -300,7 +297,7 @@ init _ =
     let
         cmd = getPhotosCmd "dave20477"
     in
-        ( { photos = Ok { left = [], shown = Nothing, right = [] }}, cmd )
+        ( Ok [],cmd )
 
 
 
@@ -310,95 +307,20 @@ init _ =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        SetPhotos (Ok []) ->
-            ( { model | photos = Ok { left = [], shown = Nothing, right = [] } }, Cmd.none )
-
-        SetPhotos (Ok (f :: fs)) ->
-            ( { model | photos = Ok { left = [], shown = Just f, right = fs } }, setDescriptionCmd (Just f) )
-
-        SetPhotos (Err e) ->
-            ( { model | photos = Err e }, Cmd.none )
-
-        -- A left or right arrow was picked.  Move a photo left or right.
-        -- Issue command to update the description for the displayed photo.
-        ScrollPick dir ->
-            case model.photos of
-                Err e ->
-                    ( { model | photos = Err e }, Cmd.none )
-
-                Ok { right, shown, left } ->
-                    case shown of
-                        Nothing ->
-                            ( model, Cmd.none )
-
-                        Just sh ->
-                            let
-                                ns =
-                                    case dir of
-                                        Right ->
-                                            case head right of
-                                                Nothing ->
-                                                    let
-                                                        rev =
-                                                            List.reverse <| sh :: left
-                                                    in
-                                                        { left = []
-                                                        , shown = head rev
-                                                        , right = drop 1 rev
-                                                        }
-
-                                                Just nsh ->
-                                                    { left = sh :: left
-                                                    , shown = Just nsh
-                                                    , right = List.drop 1 right
-                                                    }
-
-                                        Left ->
-                                            case head left of
-                                                Nothing ->
-                                                    let
-                                                        rev =
-                                                            List.reverse <| sh :: right
-                                                    in
-                                                        { right = []
-                                                        , shown = head rev
-                                                        , left = drop 1 rev
-                                                        }
-
-                                                Just nsh ->
-                                                    { right = sh :: right
-                                                    , shown = Just nsh
-                                                    , left = List.drop 1 left
-                                                    }
-                            in
-                                ( { photos = Ok ns }, setDescriptionCmd ns.shown )
+        SetPhotos phs ->
+            ( phs, Cmd.none )
 
         -- Update description of the currently viewed photo.
         SetDescription (Ok ( photoid, desc )) ->
-            case model.photos of
+            case model of
                 Err e ->
-                    ( { photos = Err e}, Cmd.none )
+                    ( Err e, Cmd.none )
 
-                Ok { left, shown, right } ->
-                    case (shown) of
-                        Nothing ->
-                            ( model, Cmd.none )
-
-                        Just sh ->
-                            let
-                                described =
-                                    { sh | description = Just desc }
-                            in
-                                if
-                                    -- caption the right photo
-                                    (described.id == photoid)
-                                then
-                                    ( { model | photos = Ok { left = left, shown = Just described, right = right } }, Cmd.none )
-                                else
-                                    ( model, Cmd.none )
+                Ok phs ->
+                    ( Ok phs, Cmd.none )
 
         SetDescription (Err e) ->
-            ( { photos = Err e}, Cmd.none )
+            ( Err e, Cmd.none )
 
 
 
@@ -484,22 +406,24 @@ photoInDiv ps =
 view : Model -> Html Msg
 view model =
     div []
-        [ case model.photos of
+        [ case model of
             Err s ->
                 text ("Error: " )
 
-            Ok scroll ->
+            Ok ([] ) ->
                     div
                         [ 
                                     HA.style "height" "100%" , 
                                     HA.style "width" "100%" , 
                                     HA.style "margin" "0" 
                         ]
-                        (case scroll.shown of
-                            Nothing ->
-                                []
-
-                            Just ph ->
-                                [ photoInDiv ph ]
-                        )
+                        [ ]
+            Ok (ph :: others) ->
+                    div
+                        [ 
+                                    HA.style "height" "100%" , 
+                                    HA.style "width" "100%" , 
+                                    HA.style "margin" "0" 
+                        ]
+                        [ photoInDiv ph ]
         ]
