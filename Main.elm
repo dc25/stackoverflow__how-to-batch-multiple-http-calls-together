@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import String
 import Html exposing (Html, div, text)
 import Html.Attributes as HA
 import Html.Events as HE
@@ -11,8 +12,9 @@ import Svg.Events as SE
 import List exposing (head, drop, take)
 import Json.Decode as DC exposing (Decoder)
 import Task exposing (andThen)
-import Navigation
-import UrlParser as Url exposing ((</>))
+import Browser
+import Browser.Navigation as Navigation
+import Url as Url 
 
 
 type Direction
@@ -21,19 +23,20 @@ type Direction
 
 
 type Msg
-    = UrlChange Navigation.Location
-    | SetPhotos (Result Http.Error (List Photo))
+    = 
+      SetPhotos (Result Http.Error (List Photo))
     | ScrollPick Direction
     | SetDescription (Result Http.Error ( String, String ))
 
 
+main : Program () Model Msg
 main =
-    Navigation.program UrlChange
-        { init = init
-        , view = view
-        , update = update
-        , subscriptions = \m -> Sub.none
-        }
+  Browser.element
+    { init = init
+    , view = view
+    , update = update
+    , subscriptions = \m -> Sub.none
+    }
 
 
 
@@ -107,7 +110,7 @@ decodePhotoSets : DC.Decoder (List ( String, String ))
 decodePhotoSets =
     DC.at [ "photosets", "photoset" ]
         (DC.list <|
-            DC.map2 (,)
+            DC.map2 (\l r -> (l,r))
                 ((DC.at [ "id" ]) DC.string)
                 ((DC.at [ "title", "_content" ]) DC.string)
         )
@@ -293,26 +296,12 @@ getAlbumPhotosCmd name album =
 -- Initialize model based on URL 'routing' arguments.
 
 
-initModel : Maybe Route -> ( Model, Cmd Msg )
-initModel r =
+init : () -> ( Model, Cmd Msg )
+init _ =
     let
-        cmd =
-            case r of
-                Nothing ->
-                    Cmd.none
-
-                Just (NameOnly version name) ->
-                    getPhotosCmd name
-
-                Just (NameAndAlbum version name album) ->
-                    getAlbumPhotosCmd name album
+        cmd = getPhotosCmd "dave20477"
     in
         ( { photos = Ok { left = [], shown = Nothing, right = [] }, clicks = 0 }, cmd )
-
-
-init : Navigation.Location -> ( Model, Cmd Msg )
-init location =
-    initModel (Url.parseHash route location)
 
 
 
@@ -328,24 +317,12 @@ type Route
 -- Parse URL 'arguments' either to just a user or a user and album.
 
 
-route : Url.Parser (Route -> a) a
-route =
-    Url.oneOf
-        [ Url.map NameOnly (Url.string </> Url.string)
-        , Url.map NameAndAlbum (Url.string </> Url.string </> Url.string)
-        ]
-
-
-
 -- UPDATE
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        UrlChange location ->
-            initModel (Url.parseHash route location)
-
         SetPhotos (Ok []) ->
             ( { model | photos = Ok { left = [], shown = Nothing, right = [] } }, Cmd.none )
 
@@ -508,7 +485,7 @@ imageWithArrows fade im =
 photoUrl : Photo -> String
 photoUrl ps =
     "https://farm"
-        ++ toString ps.farm
+        ++ String.fromInt ps.farm
         ++ ".staticflickr.com/"
         ++ ps.server
         ++ "/"
@@ -525,28 +502,24 @@ photoUrl ps =
 photoInDiv : String -> Photo -> Html Msg
 photoInDiv fade ps =
     div
-        [ HA.style
-            [ ( "height", "100%" )
-            , ( "width", "100%" )
-            , ( "margin", "0" )
-            ]
+        [ 
+              HA.style "height" "100%" 
+            , HA.style "width" "100%" 
+            , HA.style "margin" "0" 
+             
         ]
         [ div
-            [ HA.style
-                [ ( "height", "90%" )
-                , ( "width", "100%" )
-                , ( "margin", "0" )
+                [ HA.style   "height"  "90%" 
+                , HA.style   "width"  "100%" 
+                , HA.style   "margin"  "0" 
                 ]
-            ]
             [ imageWithArrows fade (photoUrl ps) ]
         , div
-            [ HA.style
-                [ ( "height", "10%" )
-                , ( "width", "100%" )
-                , ( "margin", "0" )
+                [ HA.style   "height"  "10%"
+                , HA.style   "width"  "100%"
+                , HA.style   "margin"  "0"
                 ]
-            ]
-            [ div [ HA.style [ ( "text-align", "center" ) ] ]
+            [ div [ HA.style "text-align" "center" ]
                 [ text <| Maybe.withDefault "" ps.description ]
             ]
         ]
@@ -561,7 +534,7 @@ view model =
     div []
         [ case model.photos of
             Err s ->
-                text ("Error: " ++ (toString s))
+                text ("Error: " )
 
             Ok scroll ->
                 let
@@ -575,10 +548,13 @@ view model =
                             5 - clicks
 
                     fade =
-                        toString <| toFloat fadeCount / 5.0
+                        String.fromFloat <| toFloat fadeCount / 5.0
                 in
                     div
-                        [ HA.style [ ( "height", "100%" ), ( "width", "100%" ), ( "margin", "0" ) ]
+                        [ 
+                                    HA.style "height" "100%" , 
+                                    HA.style "width" "100%" , 
+                                    HA.style "margin" "0" 
                         ]
                         (case scroll.shown of
                             Nothing ->
