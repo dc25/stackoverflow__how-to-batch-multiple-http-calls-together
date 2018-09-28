@@ -53,7 +53,8 @@ type alias Photo =
 
 initPhoto : String -> String -> String -> Int -> Photo
 initPhoto id sec ser farm =
-    Photo id sec ser farm Nothing
+    -- Photo id sec ser farm Nothing
+    Photo id sec ser farm (Just "HELLO")
 
 
 decodePhotoList : DC.Decoder (List Photo)
@@ -135,7 +136,6 @@ photoInfoUrl photo =
         ++ noJsonCallback
 
 
-
 -- Cmd to get visible photo's description from flickr.
 -- Package results as SetDescription message.
 -- Save the photo id with Task.map to verify the same photo is being displayed when the response comes back.
@@ -175,11 +175,7 @@ getPhotosCmd name =
 
 
 init : () -> ( Model, Cmd Msg )
-init _ =
-    let
-        cmd = getPhotosCmd "dave20477"
-    in
-        ( Ok [],cmd )
+init _ = ( Ok [],getPhotosCmd "dave20477" )
 
 -- UPDATE
 
@@ -227,12 +223,12 @@ photoUrl ps =
 -- show an image and description if available.
 
 
-photoInDiv : Photo -> Html Msg
-photoInDiv ps =
+viewPhoto : Photo -> Html Msg
+viewPhoto ps =
     div
         [ 
-              HA.style "height" "100%" 
-            , HA.style "width" "100%" 
+              HA.style "height" "20%" 
+            , HA.style "width" "20%" 
             , HA.style "margin" "0" 
              
         ]
@@ -245,15 +241,15 @@ photoInDiv ps =
                   [ SA.version "1.1"
                   , SA.width "100%"
                   , SA.height "100%"
-                  , SA.viewBox "-100 -60 200 120"
+                  , SA.viewBox "-1 -0.6 2 1.2"
                   , SA.preserveAspectRatio "none"
                   ]
                   ([ image
                       [ SA.xlinkHref (photoUrl ps)
-                      , SA.x "-100"
-                      , SA.y "-60"
-                      , SA.width "200"
-                      , SA.height "120"
+                      , SA.x "-1"
+                      , SA.y "-0.6"
+                      , SA.width "2"
+                      , SA.height "1.2"
                       ]
                       []
                    ]
@@ -275,25 +271,8 @@ photoInDiv ps =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ case model of
+        case model of
             Err s ->
                 text ("Error: " )
-
-            Ok ([] ) ->
-                    div
-                        [ 
-                                    HA.style "height" "100%" , 
-                                    HA.style "width" "100%" , 
-                                    HA.style "margin" "0" 
-                        ]
-                        [ ]
-            Ok (ph :: others) ->
-                    div
-                        [ 
-                                    HA.style "height" "100%" , 
-                                    HA.style "width" "100%" , 
-                                    HA.style "margin" "0" 
-                        ]
-                        [ photoInDiv ph ]
-        ]
+            Ok (phs ) ->
+                div [] (List.map viewPhoto phs)
