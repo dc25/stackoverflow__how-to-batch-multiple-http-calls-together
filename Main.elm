@@ -3,7 +3,6 @@ module Main exposing (..)
 import Browser
 import Html exposing (Html, div, text)
 import Html.Attributes as HA
-import Html.Events as HE
 import Http
 import Json.Decode as DC
 import Svg
@@ -207,26 +206,24 @@ update msg model =
             , Cmd.none
             )
 
-        -- Update description of the currently viewed photo.
+        -- Update description of the photo with matching id.
         SetDescription (Ok ( photoId, desc )) ->
             case model of
                 Ok photos ->
                     let
-                        nowTitled =
+                        justTitled =
                             photos.untitled
                                 |> List.filter (\ph -> ph.id == photoId)
                                 |> List.map (\ph -> { ph | description = Just desc })
-
-                        newPhotos =
-                            { photos | titled = photos.titled ++ nowTitled }
+                        newTitled = photos.titled ++ justTitled 
+                        newPhotos = { photos | titled = newTitled }
                     in
                     ( Ok newPhotos
                     , if
                         List.length newPhotos.titled
                             == List.length newPhotos.untitled
                       then
-                        Cmd.none
-                        -- Could do something else here.
+                        Cmd.none -- Could do something else here.
 
                       else
                         Cmd.none
