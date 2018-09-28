@@ -221,14 +221,20 @@ update msg model =
                             photos.untitled
                                 |> List.filter (\ph -> ph.id == photoId)
                                 |> List.map (\ph -> { ph | description = Just desc })
-                        newPhotos = { photos | titled = photos.titled ++ nowTitled }
 
+                        newPhotos =
+                            { photos | titled = photos.titled ++ nowTitled }
                     in
                     ( Ok newPhotos
-                    , if (  List.length newPhotos.titled 
-                         == List.length newPhotos.untitled) 
-                      then Cmd.none -- Could do something else here.
-                      else Cmd.none 
+                    , if
+                        List.length newPhotos.titled
+                            == List.length newPhotos.untitled
+                      then
+                        Cmd.none
+                        -- Could do something else here.
+
+                      else
+                        Cmd.none
                     )
 
         SetDescription (Err e) ->
@@ -293,7 +299,7 @@ viewPhoto ps =
             , HA.style "width" "100%"
             , HA.style "margin" "0"
             ]
-            [ div 
+            [ div
                 [ HA.style "text-align" "center" ]
                 [ text <| Maybe.withDefault "" ps.description ]
             ]
