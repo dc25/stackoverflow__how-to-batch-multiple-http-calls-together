@@ -183,13 +183,20 @@ update msg model =
             ( Err e, Cmd.none )
 
         -- Update description of the currently viewed photo.
-        SetDescription (Ok ( photoid, desc )) ->
+        SetDescription (Ok ( photoId, desc )) ->
             case model of
                 Err e ->
                     ( Err e, Cmd.none )
 
                 Ok photos ->
-                    ( Ok photos, Cmd.none )
+                    let nowCaptioned = photos.uncaptioned 
+                           |> List.filter (\ph -> ph.id == photoId) 
+                           |> List.map (\ph -> {ph | description = Just desc})
+
+                        stillUncaptioned = photos.uncaptioned 
+                           |> List.filter (\ph -> ph.id /= photoId) 
+
+                    in ( Ok {uncaptioned = stillUncaptioned, captioned = photos.captioned ++ nowCaptioned}, Cmd.none )
 
         SetDescription (Err e) ->
             ( Err e, Cmd.none )
@@ -266,4 +273,9 @@ view model =
             Err s ->
                 text ("Error: " )
             Ok (photos ) ->
-                div [] (List.map viewPhoto (photos.uncaptioned))
+                div []
+                    [ div [] [text "Uncaptioned"]
+                    , div [] (List.map viewPhoto (photos.uncaptioned))
+                    , div [] [text "Captioned"]
+                    , div [] (List.map viewPhoto (photos.captioned))
+                    ]
