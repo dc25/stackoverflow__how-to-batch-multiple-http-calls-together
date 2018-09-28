@@ -315,8 +315,8 @@ view model =
 
         Ok photos ->
             div []
-                [ div [] [ text "Untitled" ]
+                [ div [] [ text "UNTITLED" ]
                 , div [] (List.map viewPhoto photos.untitled)
-                , div [] [ text "Titled" ]
+                , div [] [ text "TITLED" ]
                 , div [] (List.map viewPhoto photos.titled)
                 ]
