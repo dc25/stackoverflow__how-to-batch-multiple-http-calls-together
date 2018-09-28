@@ -221,16 +221,11 @@ update msg model =
                             photos.untitled
                                 |> List.filter (\ph -> ph.id == photoId)
                                 |> List.map (\ph -> { ph | description = Just desc })
+                        newPhotos = { photos | titled = photos.titled ++ nowTitled }
 
-                        stillUntitled =
-                            photos.untitled
-                                |> List.filter (\ph -> ph.id /= photoId)
                     in
-                    ( Ok
-                        { untitled = stillUntitled
-                        , titled = photos.titled ++ nowTitled
-                        }
-                    , if (List.isEmpty stillUntitled) 
+                    ( Ok newPhotos
+                    , if (List.length newPhotos.titled == List.length newPhotos.untitled) 
                       then Cmd.none -- Could do something else here.
                       else Cmd.none 
                     )
