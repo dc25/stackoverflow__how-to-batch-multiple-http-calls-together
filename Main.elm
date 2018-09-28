@@ -183,7 +183,7 @@ init _ =
         { untitled = []
         , titled = []
         }
-    , getPhotosCmd "elmDemo"
+    , getPhotosCmd "elmDemo" -- flickr user name
     )
 
 
@@ -210,11 +210,6 @@ update msg model =
         -- Update description of the currently viewed photo.
         SetDescription (Ok ( photoId, desc )) ->
             case model of
-                Err e ->
-                    ( Err e
-                    , Cmd.none
-                    )
-
                 Ok photos ->
                     let
                         nowTitled =
@@ -235,6 +230,11 @@ update msg model =
 
                       else
                         Cmd.none
+                    )
+
+                Err e ->
+                    ( Err e
+                    , Cmd.none
                     )
 
         SetDescription (Err e) ->
