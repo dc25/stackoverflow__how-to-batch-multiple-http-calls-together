@@ -258,37 +258,6 @@ getPhotosCmd name =
 -- Package results as SetPhotos message.
 
 
-getAlbumPhotosCmd : String -> String -> Cmd Msg
-getAlbumPhotosCmd name album =
-    let
-        req =
-            Http.get (userUrl name) decodeUser
-
-        userTask =
-            Http.toTask req
-
-        setsTask uid =
-            Task.map (\s -> ( uid, s )) <| Http.toTask (Http.get (photoSetsUrl uid) decodePhotoSets)
-
-        albumPhotosTask sets =
-            let
-                murl =
-                    albumPhotosUrl album sets
-            in
-                case murl of
-                    Nothing ->
-                        Task.fail (Http.BadUrl <| "album not found: " ++ album)
-
-                    Just url ->
-                        Http.toTask (Http.get url decodeAlbumPhotos)
-
-        userPhotosTask =
-            userTask |> (andThen setsTask) |> (andThen albumPhotosTask)
-    in
-        Task.attempt SetPhotos userPhotosTask
-
-
-
 -- Initialize model based on URL 'routing' arguments.
 
 
