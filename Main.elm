@@ -225,7 +225,8 @@ update msg model =
 
                     in
                     ( Ok newPhotos
-                    , if (List.length newPhotos.titled == List.length newPhotos.untitled) 
+                    , if (  List.length newPhotos.titled 
+                         == List.length newPhotos.untitled) 
                       then Cmd.none -- Could do something else here.
                       else Cmd.none 
                     )
