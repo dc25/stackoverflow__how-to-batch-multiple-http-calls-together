@@ -1,4 +1,4 @@
-module Main exposing (Model, Msg(..), Photo, apiKey, decodePhotoDescription, decodePhotoList, decodePhotos, decodeUser, flickrRestServices, getPhotosCmd, init, initPhoto, main, noJsonCallback, photoInfoUrl, photoUrl, publicPhotosUrl, setDescriptionCmd, update, userUrl, view, viewPhoto)
+module Main exposing (..)
 
 import Browser
 import Html exposing (Html, div, text)
@@ -49,7 +49,7 @@ type alias Photo =
 
 
 -- Create a Photo record from info retrieved from flickr api.
--- Defer extra api call needed for Description until photo displayed.
+-- Get description later
 
 
 initPhoto : String -> String -> String -> Int -> Photo
